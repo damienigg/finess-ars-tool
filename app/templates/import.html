@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Import de donnees - FINESS ARS{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Import des donnees FINESS</h1>
+
+{% if messages is defined and messages %}
+<div class="alert alert-info">
+    {% for msg in messages %}
+    <p class="mb-0">{{ msg }}</p>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="card mb-4">
+    <div class="card-header"><i class="bi bi-info-circle"></i> Instructions</div>
+    <div class="card-body">
+        <p>Importez les fichiers d'extraction FINESS au format <strong>CSV</strong> (separateur <code>;</code>).</p>
+        <p>Les fichiers sont disponibles sur le site <strong>data.gouv.fr</strong> ou via l'extraction FINESS du ministere.</p>
+        <ul>
+            <li><strong>Fichier ET (obligatoire)</strong> : liste des etablissements geographiques</li>
+            <li><strong>Fichier EJ (optionnel)</strong> : liste des entites juridiques</li>
+        </ul>
+        <p class="text-muted mb-0">Les colonnes du CSV doivent correspondre aux noms de champs FINESS standards (nofinesset, rs, categetab, etc.).</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><i class="bi bi-upload"></i> Charger les fichiers</div>
+    <div class="card-body">
+        <form method="post" action="/import" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label class="form-label fw-bold">Fichier des etablissements (ET) *</label>
+                <input type="file" name="fichier_et" class="form-control" accept=".csv" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-bold">Fichier des entites juridiques (EJ)</label>
+                <input type="file" name="fichier_ej" class="form-control" accept=".csv">
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-cloud-upload"></i> Importer</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

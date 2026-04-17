@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}{{ etab.rs if etab else "Introuvable" }} - FINESS ARS{% endblock %}
+
+{% block content %}
+{% if not etab %}
+<div class="alert alert-danger">Etablissement non trouve.</div>
+<a href="/recherche" class="btn btn-primary">Retour a la recherche</a>
+{% else %}
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/recherche">Recherche</a></li>
+        <li class="breadcrumb-item active">{{ etab.nofinesset }}</li>
+    </ol>
+</nav>
+
+<h1 class="mb-1">{{ etab.rs }}</h1>
+<p class="text-muted mb-4">
+    <code>FINESS ET {{ etab.nofinesset }}</code>
+    {% if etab.nofinessej %}
+     &mdash; <code>EJ {{ etab.nofinessej }}</code>
+    {% endif %}
+</p>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header"><i class="bi bi-info-circle"></i> Informations generales</div>
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <tr><th>Raison sociale longue</th><td>{{ etab.rslongue or "-" }}</td></tr>
+                    <tr><th>Categorie</th><td>{{ etab.libcategetab }} ({{ etab.categetab }})</td></tr>
+                    <tr><th>Categorie agregee</th><td>{{ etab.libcategagretab or "-" }} ({{ etab.categagretab or "-" }})</td></tr>
+                    <tr><th>Date d'ouverture</th><td>{{ etab.dateouv or "-" }}</td></tr>
+                    <tr><th>Date d'autorisation</th><td>{{ etab.dateautor or "-" }}</td></tr>
+                    <tr><th>MFT</th><td>{{ etab.libmft or "-" }} ({{ etab.mft or "-" }})</td></tr>
+                    <tr><th>SPH</th><td>{{ etab.libsph or "-" }} ({{ etab.sph or "-" }})</td></tr>
+                    <tr><th>SIRET</th><td>{{ etab.siret or "-" }}</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header"><i class="bi bi-geo-alt"></i> Coordonnees</div>
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <tr>
+                        <th>Adresse</th>
+                        <td>
+                            {{ etab.numvoie or "" }} {{ etab.typvoie or "" }} {{ etab.voie or "" }}<br>
+                            {% if etab.compvoie %}{{ etab.compvoie }}<br>{% endif %}
+                            {% if etab.compldistrib %}{{ etab.compldistrib }}<br>{% endif %}
+                            {{ etab.codepostal }} {{ etab.libcommune }}
+                        </td>
+                    </tr>
+                    <tr><th>Departement</th><td>{{ etab.libdepartement }} ({{ etab.departement }})</td></tr>
+                    <tr><th>Region</th><td>{{ etab.libregion }} ({{ etab.region }})</td></tr>
+                    <tr><th>Telephone</th><td>{{ etab.telephone or "-" }}</td></tr>
+                    <tr><th>Telecopie</th><td>{{ etab.telecopie or "-" }}</td></tr>
+                    <tr><th>Courriel</th><td>{{ etab.courriel or "-" }}</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if ej %}
+<div class="card mb-4">
+    <div class="card-header"><i class="bi bi-building"></i> Entite juridique (EJ {{ ej.nofinesset }})</div>
+    <div class="card-body">
+        <table class="table table-sm mb-0">
+            <tr><th>Raison sociale</th><td>{{ ej.rs }}</td></tr>
+            <tr><th>Categorie</th><td>{{ ej.libcategetab or "-" }}</td></tr>
+            <tr><th>Adresse</th><td>{{ ej.numvoie or "" }} {{ ej.typvoie or "" }} {{ ej.voie or "" }}, {{ ej.codepostal }} {{ ej.libcommune }}</td></tr>
+            <tr><th>Telephone</th><td>{{ ej.telephone or "-" }}</td></tr>
+            <tr><th>Courriel</th><td>{{ ej.courriel or "-" }}</td></tr>
+            <tr><th>SIRET</th><td>{{ ej.siret or "-" }}</td></tr>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if autres_et %}
+<div class="card mb-4">
+    <div class="card-header"><i class="bi bi-diagram-3"></i> Autres etablissements de la meme EJ ({{ autres_et|length }})</div>
+    <div class="card-body">
+        <table class="table table-sm table-hover mb-0">
+            <thead><tr><th>FINESS ET</th><th>Raison sociale</th><th>Categorie</th><th>Commune</th><th></th></tr></thead>
+            <tbody>
+            {% for a in autres_et %}
+            <tr>
+                <td><code>{{ a.nofinesset }}</code></td>
+                <td>{{ a.rs }}</td>
+                <td>{{ a.libcategetab }}</td>
+                <td>{{ a.libcommune }}</td>
+                <td><a href="/etablissement/{{ a.nofinesset }}" class="btn btn-sm btn-outline-primary">Voir</a></td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}

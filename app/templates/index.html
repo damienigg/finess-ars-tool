@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Tableau de bord - FINESS ARS{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Tableau de bord</h1>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card text-bg-primary">
+            <div class="card-body text-center">
+                <h5 class="card-title">Etablissements (ET)</h5>
+                <p class="display-4 fw-bold">{{ total_et }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card text-bg-info">
+            <div class="card-body text-center">
+                <h5 class="card-title">Entites juridiques (EJ)</h5>
+                <p class="display-4 fw-bold">{{ total_ej }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if total_et == 0 %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle"></i>
+    Aucune donnee chargee. <a href="/import" class="alert-link">Importez les fichiers FINESS</a> pour commencer.
+</div>
+{% endif %}
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header"><i class="bi bi-geo-alt"></i> Top 10 - Par region</div>
+            <div class="card-body">
+                {% if par_region %}
+                <table class="table table-sm table-striped mb-0">
+                    <thead><tr><th>Region</th><th class="text-end">Nb</th></tr></thead>
+                    <tbody>
+                    {% for region, count in par_region %}
+                        <tr><td>{{ region or "Non renseigne" }}</td><td class="text-end">{{ count }}</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted mb-0">Aucune donnee.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header"><i class="bi bi-tags"></i> Top 10 - Par categorie</div>
+            <div class="card-body">
+                {% if par_categorie %}
+                <table class="table table-sm table-striped mb-0">
+                    <thead><tr><th>Categorie</th><th class="text-end">Nb</th></tr></thead>
+                    <tbody>
+                    {% for cat, count in par_categorie %}
+                        <tr><td>{{ cat or "Non renseigne" }}</td><td class="text-end">{{ count }}</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted mb-0">Aucune donnee.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
