@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Dossiers - FINESS ARS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-kanban"></i> Dossiers</h1>
+    <a href="/workflow/nouveau" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Nouveau dossier</a>
+</div>
+
+<!-- Kanban summary -->
+<div class="row mb-4">
+    {% for s in statuts %}
+    <div class="col">
+        <a href="/workflow?statut={{ s }}" class="text-decoration-none">
+            <div class="card {{ 'border-primary' if statut_filtre == s else '' }}">
+                <div class="card-body text-center py-2">
+                    <small class="text-muted">{{ s }}</small>
+                    <p class="h4 mb-0">{{ kanban.get(s, 0) }}</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+
+<p class="text-muted">{{ total }} dossier(s) {% if statut_filtre %}(filtre : {{ statut_filtre }}) <a href="/workflow">Tout voir</a>{% endif %}</p>
+
+{% if dossiers %}
+<table class="table table-hover">
+    <thead class="table-dark">
+        <tr><th>#</th><th>FINESS</th><th>Type</th><th>Objet</th><th>Statut</th><th>Agent</th><th>Echeance</th><th>MAJ</th><th></th></tr>
+    </thead>
+    <tbody>
+    {% for d in dossiers %}
+    <tr>
+        <td>{{ d.id }}</td>
+        <td><code>{{ d.nofinesset }}</code></td>
+        <td>{{ d.type_demande }}</td>
+        <td><small>{{ d.objet[:60] if d.objet else "-" }}{{ "..." if d.objet and d.objet|length > 60 else "" }}</small></td>
+        <td><span class="badge text-bg-{{ 'success' if d.statut in ('valide','transmis_drees') else ('danger' if d.statut == 'rejete' else ('warning' if d.statut == 'attente_piece' else 'primary')) }}">{{ d.statut }}</span></td>
+        <td>{{ d.agent_instructeur or "-" }}</td>
+        <td>{{ d.date_echeance.strftime('%d/%m/%Y') if d.date_echeance else "-" }}</td>
+        <td><small>{{ d.updated_at.strftime('%d/%m/%Y %H:%M') if d.updated_at else "" }}</small></td>
+        <td><a href="/workflow/{{ d.id }}" class="btn btn-sm btn-outline-primary">Ouvrir</a></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="text-muted">Aucun dossier.</p>
+{% endif %}
+{% endblock %}

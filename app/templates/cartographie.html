@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Cartographie - FINESS ARS{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    #map { height: 70vh; width: 100%; border-radius: 8px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="bi bi-geo-alt"></i> Cartographie</h1>
+
+<div class="row mb-3">
+    <div class="col-md-3">
+        <label class="form-label">Region</label>
+        <input type="text" id="filtre-region" class="form-control" placeholder="Code region">
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Departement</label>
+        <input type="text" id="filtre-departement" class="form-control" placeholder="Ex: 75">
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Categorie</label>
+        <input type="text" id="filtre-categorie" class="form-control" placeholder="Code categorie">
+    </div>
+    <div class="col-md-3 d-flex align-items-end">
+        <button id="btn-filtrer" class="btn btn-primary me-2">Filtrer</button>
+        <button id="btn-reset" class="btn btn-outline-secondary">Reset</button>
+    </div>
+</div>
+
+<div id="map"></div>
+<p class="text-muted mt-2"><span id="count">0</span> etablissement(s) affiches</p>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const map = L.map('map').setView([46.8, 2.5], 6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+let markers = L.layerGroup().addTo(map);
+
+function loadPoints(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    fetch('/cartographie/api/points?' + qs)
+        .then(r => r.json())
+        .then(data => {
+            markers.clearLayers();
+            const features = data.features || [];
+            features.forEach(f => {
+                const [lon, lat] = f.geometry.coordinates;
+                const p = f.properties;
+                const marker = L.circleMarker([lat, lon], {radius: 5, color: '#0d6efd', weight: 1, fillOpacity: 0.7});
+                marker.bindPopup(
+                    '<strong>' + p.rs + '</strong><br>' +
+                    '<code>' + p.nofinesset + '</code><br>' +
+                    p.libcategetab + '<br>' +
+                    p.commune + ' (' + p.departement + ')' +
+                    '<br><a href="/etablissement/' + p.nofinesset + '">Voir fiche</a>'
+                );
+                markers.addLayer(marker);
+            });
+            document.getElementById('count').textContent = features.length;
+        });
+}
+
+document.getElementById('btn-filtrer').addEventListener('click', function() {
+    loadPoints({
+        region: document.getElementById('filtre-region').value,
+        departement: document.getElementById('filtre-departement').value,
+        categetab: document.getElementById('filtre-categorie').value,
+    });
+});
+
+document.getElementById('btn-reset').addEventListener('click', function() {
+    document.getElementById('filtre-region').value = '';
+    document.getElementById('filtre-departement').value = '';
+    document.getElementById('filtre-categorie').value = '';
+    loadPoints();
+});
+
+loadPoints();
+</script>
+{% endblock %}

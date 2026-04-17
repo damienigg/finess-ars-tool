@@ -7,3 +7,10 @@ aiofiles==24.1.0
 httpx==0.28.1
 openpyxl==3.1.5
 pandas==2.2.3
+pyproj==3.7.1
+python-docx==1.1.2
+weasyprint==63.1
+pytest==8.3.4
+pytest-asyncio==0.25.0
+httpx==0.28.1
+Levenshtein==0.26.1

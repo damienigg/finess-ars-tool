@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Controle qualite - FINESS ARS{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="bi bi-shield-check"></i> Controle qualite</h1>
+
+{% if message is defined and message %}
+<div class="alert alert-info">{{ message }}</div>
+{% endif %}
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-bg-{{ 'success' if scores.score_global >= 80 else ('warning' if scores.score_global >= 50 else 'danger') }}">
+            <div class="card-body text-center">
+                <h6>Score qualite</h6>
+                <p class="display-4 fw-bold">{{ scores.score_global }}%</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h6>Etablissements</h6>
+                <p class="display-5 fw-bold">{{ scores.total_et }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-bg-danger">
+            <div class="card-body text-center">
+                <h6>Anomalies actives</h6>
+                <p class="display-5 fw-bold">{{ scores.total_anomalies }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card-body text-center d-flex flex-column justify-content-center">
+            <form method="post" action="/qualite/executer">
+                <button type="submit" class="btn btn-lg btn-primary"><i class="bi bi-play-circle"></i> Lancer le controle</button>
+            </form>
+            <a href="/qualite/export" class="btn btn-outline-secondary mt-2"><i class="bi bi-download"></i> Exporter CSV</a>
+        </div>
+    </div>
+</div>
+
+{% if scores.par_regle %}
+<div class="card mb-4">
+    <div class="card-header">Anomalies par regle</div>
+    <div class="card-body">
+        <table class="table table-sm mb-0">
+            <thead><tr><th>Regle</th><th>Niveau</th><th class="text-end">Nombre</th></tr></thead>
+            <tbody>
+            {% for regle, niveau, count in scores.par_regle %}
+            <tr>
+                <td>{{ regle }}</td>
+                <td><span class="badge text-bg-{{ 'danger' if niveau == 'erreur' else ('warning' if niveau == 'avertissement' else 'info') }}">{{ niveau }}</span></td>
+                <td class="text-end">{{ count }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if anomalies %}
+<div class="card">
+    <div class="card-header">Detail des anomalies ({{ anomalies|length }} affichees)</div>
+    <div class="card-body p-0">
+        <table class="table table-hover table-sm mb-0">
+            <thead class="table-dark">
+                <tr><th>FINESS</th><th>Regle</th><th>Niveau</th><th>Message</th><th></th></tr>
+            </thead>
+            <tbody>
+            {% for a in anomalies %}
+            <tr>
+                <td>
+                    {% if a.nofinesset %}<a href="/etablissement/{{ a.nofinesset }}"><code>{{ a.nofinesset }}</code></a>
+                    {% elif a.nofinessej %}<code>EJ {{ a.nofinessej }}</code>
+                    {% else %}-{% endif %}
+                </td>
+                <td><small>{{ a.regle }}</small></td>
+                <td><span class="badge text-bg-{{ 'danger' if a.niveau == 'erreur' else ('warning' if a.niveau == 'avertissement' else 'info') }}">{{ a.niveau }}</span></td>
+                <td><small>{{ a.message }}</small></td>
+                <td>
+                    <form method="post" action="/qualite/resoudre/{{ a.id }}" class="d-inline">
+                        <button type="submit" class="btn btn-sm btn-outline-success" title="Marquer resolu"><i class="bi bi-check-lg"></i></button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

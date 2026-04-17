@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Reconciliation - FINESS ARS{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="bi bi-arrow-left-right"></i> Reconciliation</h1>
+
+{% if erreur is defined and erreur %}
+<div class="alert alert-danger">{{ erreur }}</div>
+{% endif %}
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header"><i class="bi bi-file-diff"></i> Diff entre deux extractions FINESS</div>
+            <div class="card-body">
+                <p class="text-muted">Comparez deux fichiers CSV FINESS pour identifier les ajouts, suppressions et modifications.</p>
+                <form method="post" action="/reconciliation/diff" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label">Fichier ancien</label>
+                        <input type="file" name="fichier_ancien" class="form-control" accept=".csv" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Fichier nouveau</label>
+                        <input type="file" name="fichier_nouveau" class="form-control" accept=".csv" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Comparer</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header"><i class="bi bi-database"></i> Comparaison avec SAE</div>
+            <div class="card-body">
+                <p class="text-muted">Croisez la base FINESS locale avec une extraction SAE pour detecter les ecarts.</p>
+                <form method="post" action="/reconciliation/sae" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label">Fichier SAE (CSV)</label>
+                        <input type="file" name="fichier_sae" class="form-control" accept=".csv" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Comparer avec FINESS</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if diff is defined and diff %}
+<div class="card mb-4">
+    <div class="card-header">Resultats du diff — {{ diff.total_changements }} changement(s)</div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-4"><div class="alert alert-success mb-0">{{ diff.ajoutes|length }} ajoute(s)</div></div>
+            <div class="col-md-4"><div class="alert alert-danger mb-0">{{ diff.supprimes|length }} supprime(s)</div></div>
+            <div class="col-md-4"><div class="alert alert-warning mb-0">{{ diff.modifies|length }} modifie(s)</div></div>
+        </div>
+
+        {% if diff.ajoutes %}
+        <h6>Ajoutes</h6>
+        <p><code>{{ diff.ajoutes[:50]|join(", ") }}{{ "..." if diff.ajoutes|length > 50 else "" }}</code></p>
+        {% endif %}
+
+        {% if diff.supprimes %}
+        <h6>Supprimes</h6>
+        <p><code>{{ diff.supprimes[:50]|join(", ") }}{{ "..." if diff.supprimes|length > 50 else "" }}</code></p>
+        {% endif %}
+
+        {% if diff.modifies %}
+        <h6>Modifies ({{ diff.modifies|length }})</h6>
+        <table class="table table-sm">
+            <thead><tr><th>FINESS</th><th>Champs modifies</th></tr></thead>
+            <tbody>
+            {% for m in diff.modifies[:100] %}
+            <tr>
+                <td><code>{{ m.nofinesset }}</code></td>
+                <td>
+                    {% for champ, vals in m.changements.items() %}
+                    <small><strong>{{ champ }}</strong>: {{ vals.ancien }} &rarr; {{ vals.nouveau }}</small><br>
+                    {% endfor %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+{% if sae is defined and sae %}
+<div class="card mb-4">
+    <div class="card-header">Resultats comparaison SAE / FINESS</div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-3"><div class="alert alert-info mb-0">{{ sae.communs }} en commun</div></div>
+            <div class="col-md-3"><div class="alert alert-warning mb-0">{{ sae.dans_sae_pas_finess|length }} dans SAE uniquement</div></div>
+            <div class="col-md-3"><div class="alert alert-secondary mb-0">{{ sae.dans_finess_pas_sae|length }} dans FINESS uniquement</div></div>
+            <div class="col-md-3"><div class="alert alert-light mb-0">SAE: {{ sae.total_sae }} / FINESS: {{ sae.total_finess }}</div></div>
+        </div>
+        {% if sae.dans_sae_pas_finess %}
+        <h6>Presents dans SAE mais absents de FINESS ({{ sae.dans_sae_pas_finess|length }})</h6>
+        <p><code>{{ sae.dans_sae_pas_finess[:50]|join(", ") }}</code></p>
+        {% endif %}
+        {% if sae.dans_finess_pas_sae %}
+        <h6>Presents dans FINESS mais absents de SAE ({{ sae.dans_finess_pas_sae|length }})</h6>
+        <p><code>{{ sae.dans_finess_pas_sae[:50]|join(", ") }}</code></p>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

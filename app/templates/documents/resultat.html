@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Document genere - FINESS ARS{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/documents">Documents</a></li>
+        <li class="breadcrumb-item active">Resultat</li>
+    </ol>
+</nav>
+
+{% if texte %}
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between">
+        <span>{{ modele.nom if modele else "Document" }} — FINESS {{ nofinesset }}</span>
+        <form method="post" action="/documents/telecharger" class="d-inline">
+            <input type="hidden" name="texte" value="{{ texte }}">
+            <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-download"></i> Telecharger (.txt)</button>
+        </form>
+    </div>
+    <div class="card-body">
+        <pre class="mb-0" style="white-space: pre-wrap; font-family: serif; font-size: 1rem;">{{ texte }}</pre>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-warning">Impossible de generer le document. Verifiez le numero FINESS et le modele.</div>
+{% endif %}
+
+<a href="/documents" class="btn btn-outline-secondary">Retour aux modeles</a>
+{% endblock %}

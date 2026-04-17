@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Documents - FINESS ARS{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="bi bi-file-earmark-text"></i> Generation de documents</h1>
+
+<div class="row">
+    {% for m in modeles %}
+    <div class="col-md-4 mb-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">{{ m.nom }}</h5>
+                <p class="card-text text-muted">{{ m.description }}</p>
+                <a href="/documents/generer?modele_id={{ m.id }}" class="btn btn-outline-primary">Generer</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
