@@ -1,16 +1,28 @@
+# --- Web framework ---
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
+gunicorn==23.0.0
+
+# --- Templates & forms ---
 jinja2==3.1.5
 python-multipart==0.0.20
+
+# --- Database ---
 sqlalchemy==2.0.37
-aiofiles==24.1.0
-httpx==0.28.1
-openpyxl==3.1.5
+alembic==1.14.0
+
+# --- Data processing ---
 pandas==2.2.3
-pyproj==3.7.1
-python-docx==1.1.2
-weasyprint==63.1
-pytest==8.3.4
-pytest-asyncio==0.25.0
+
+# --- HTTP client (SIRENE API) ---
 httpx==0.28.1
+
+# --- I/O & geo ---
+aiofiles==24.1.0
+pyproj==3.7.1
+
+# --- Fuzzy matching ---
 Levenshtein==0.26.1
+
+# --- Configuration ---
+python-dotenv==1.0.1

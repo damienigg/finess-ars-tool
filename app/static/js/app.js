@@ -1,4 +1,4 @@
-// FINESS ARS - client-side helpers
+// Finess-for-Laure - client-side helpers
 document.addEventListener("DOMContentLoaded", function () {
     // Highlight active nav link
     const currentPath = window.location.pathname;

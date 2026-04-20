@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Vérification SIRENE - Finess-for-Laure{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/reconciliation">Réconciliation</a></li>
+        <li class="breadcrumb-item active">Vérification SIRENE</li>
+    </ol>
+</nav>
+
+<h1 class="mb-4"><i class="bi bi-patch-check"></i> Vérification SIRENE (INSEE)</h1>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <p class="text-muted">Interroge l'API Sirene de l'INSEE pour vérifier qu'un numéro SIRET existe et son état administratif.</p>
+        <form method="post" action="/reconciliation/sirene" class="row g-2">
+            <div class="col-md-6">
+                <input type="text" name="siret" class="form-control" placeholder="SIRET (14 chiffres)" value="{{ siret }}" pattern="\d{14}" required>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> Vérifier</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if result is defined and result is not none %}
+<div class="card">
+    <div class="card-header">Résultat pour SIRET <code>{{ siret }}</code></div>
+    <div class="card-body">
+        {% if result.erreur %}
+        <div class="alert alert-warning mb-0">
+            <strong>Information non disponible :</strong> {{ result.erreur }}
+        </div>
+        {% elif result.existe %}
+        <table class="table table-sm mb-0">
+            <tr><th style="width:30%">Existence</th><td><span class="badge text-bg-success">Trouvé</span></td></tr>
+            <tr><th>État administratif</th>
+                <td>
+                    {% if result.actif %}
+                    <span class="badge text-bg-success">Actif</span>
+                    {% else %}
+                    <span class="badge text-bg-secondary">Cessé / fermé</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr><th>Dénomination</th><td>{{ result.denomination or "-" }}</td></tr>
+        </table>
+        {% else %}
+        <div class="alert alert-danger mb-0">Aucun établissement trouvé à ce SIRET.</div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

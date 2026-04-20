@@ -1,13 +1,20 @@
 {% extends "base.html" %}
-{% block title %}Import de donnees - FINESS ARS{% endblock %}
+{% block title %}Import de donnees - Finess-for-Laure{% endblock %}
 
 {% block content %}
 <h1 class="mb-4">Import des donnees FINESS</h1>
 
 {% if messages is defined and messages %}
-<div class="alert alert-info">
+<div class="alert alert-success">
     {% for msg in messages %}
     <p class="mb-0">{{ msg }}</p>
+    {% endfor %}
+</div>
+{% endif %}
+{% if errors is defined and errors %}
+<div class="alert alert-danger">
+    {% for err in errors %}
+    <p class="mb-0">{{ err }}</p>
     {% endfor %}
 </div>
 {% endif %}
@@ -22,6 +29,7 @@
             <li><strong>Fichier EJ (optionnel)</strong> : liste des entites juridiques</li>
         </ul>
         <p class="text-muted mb-0">Les colonnes du CSV doivent correspondre aux noms de champs FINESS standards (nofinesset, rs, categetab, etc.).</p>
+        <p class="text-muted mb-0"><small>Taille maximale par fichier : {{ max_upload_mb or 100 }} Mo.</small></p>
     </div>
 </div>
 

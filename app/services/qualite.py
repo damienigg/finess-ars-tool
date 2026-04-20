@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.models import (
     Anomalie, Etablissement, EntiteJuridique, NiveauAnomalie,
 )
+from app.utils import utcnow
 
 
 # ---------------------------------------------------------------------------
@@ -180,7 +181,7 @@ def regle_adresse_incomplete(db: Session) -> List[Dict]:
 def regle_ouvert_sans_autorisation(db: Session) -> List[Dict]:
     """ET ouvert depuis > 2 ans sans date d'autorisation."""
     anomalies = []
-    deux_ans = datetime.utcnow() - timedelta(days=730)
+    deux_ans = utcnow() - timedelta(days=730)
     for et in db.query(Etablissement).filter(
         Etablissement.dateouv.isnot(None),
         Etablissement.dateouv != "",

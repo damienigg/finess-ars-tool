@@ -12,6 +12,7 @@ from app.services.pilotage import (
     dossiers_en_retard,
     comparaison_inter_departementale,
 )
+from app.utils import utcnow
 
 
 class TestIndicateursGlobaux:
@@ -110,7 +111,7 @@ class TestDossiersParStatut:
 
 class TestDossiersEnRetard:
     def test_aucun_retard(self, db, sample_et):
-        future = datetime.utcnow() + timedelta(days=30)
+        future = utcnow() + timedelta(days=30)
         db.add(Dossier(
             nofinesset=sample_et.nofinesset,
             type_demande="creation",
@@ -122,7 +123,7 @@ class TestDossiersEnRetard:
         assert len(retards) == 0
 
     def test_detecte_retard(self, db, sample_et):
-        passe = datetime.utcnow() - timedelta(days=5)
+        passe = utcnow() - timedelta(days=5)
         db.add(Dossier(
             nofinesset=sample_et.nofinesset,
             type_demande="modification",
@@ -134,7 +135,7 @@ class TestDossiersEnRetard:
         assert len(retards) == 1
 
     def test_ignore_dossiers_clos(self, db, sample_et):
-        passe = datetime.utcnow() - timedelta(days=5)
+        passe = utcnow() - timedelta(days=5)
         db.add(Dossier(
             nofinesset=sample_et.nofinesset,
             type_demande="creation",

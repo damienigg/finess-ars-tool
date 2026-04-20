@@ -1,8 +1,13 @@
 {% extends "base.html" %}
-{% block title %}Reconciliation - FINESS ARS{% endblock %}
+{% block title %}Reconciliation - Finess-for-Laure{% endblock %}
 
 {% block content %}
-<h1 class="mb-4"><i class="bi bi-arrow-left-right"></i> Reconciliation</h1>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0"><i class="bi bi-arrow-left-right"></i> Réconciliation</h1>
+    <a href="/reconciliation/sirene" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-patch-check"></i> Vérification SIRENE
+    </a>
+</div>
 
 {% if erreur is defined and erreur %}
 <div class="alert alert-danger">{{ erreur }}</div>

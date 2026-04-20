@@ -1,0 +1,7 @@
+-r requirements.txt
+
+# Fenêtre WebView embarquée (utilise Edge WebView2 sur Windows, cocoa sur macOS).
+pywebview==5.3.2
+
+# Packaging vers .exe autonome.
+pyinstaller==6.11.1

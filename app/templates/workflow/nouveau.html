@@ -1,8 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Nouveau dossier - FINESS ARS{% endblock %}
+{% block title %}Nouveau dossier - Finess-for-Laure{% endblock %}
 
 {% block content %}
 <h1 class="mb-4">Nouveau dossier</h1>
+
+{% if etab %}
+<div class="alert alert-info">
+    Création d'un dossier pour <strong>{{ etab.rs }}</strong>
+    (<code>{{ etab.nofinesset }}</code>) &mdash; {{ etab.libcommune }}
+</div>
+{% endif %}
 
 <div class="card">
     <div class="card-body">
@@ -10,7 +17,7 @@
             <div class="row g-3">
                 <div class="col-md-4">
                     <label class="form-label">N FINESS ET *</label>
-                    <input type="text" name="nofinesset" class="form-control" required maxlength="9" placeholder="123456789">
+                    <input type="text" name="nofinesset" class="form-control" required maxlength="9" placeholder="123456789" value="{{ nofinesset }}">
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Type de demande *</label>

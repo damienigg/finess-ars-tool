@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Zones blanches - Finess-for-Laure{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>#map-zones { height: 55vh; width: 100%; border-radius: 8px; }</style>
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/cartographie">Cartographie</a></li>
+        <li class="breadcrumb-item active">Zones blanches</li>
+    </ol>
+</nav>
+
+<h1 class="mb-4"><i class="bi bi-bullseye"></i> Zones blanches</h1>
+<p class="text-muted">
+    Identifie les établissements d'une catégorie donnée dont le plus proche voisin de
+    même catégorie dépasse un rayon paramétrable.
+</p>
+
+<form method="get" class="row g-3 mb-4">
+    <div class="col-md-6">
+        <label class="form-label">Catégorie d'établissement</label>
+        <select name="categetab" class="form-select" required>
+            <option value="">— Sélectionner —</option>
+            {% for code, lib in categories %}
+            <option value="{{ code }}" {% if code == categetab %}selected{% endif %}>
+                {{ code }} — {{ lib or "Non renseigné" }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Rayon (km)</label>
+        <input type="number" name="rayon_km" class="form-control" min="1" max="500" step="1" value="{{ rayon_km }}">
+    </div>
+    <div class="col-md-3 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> Analyser</button>
+    </div>
+</form>
+
+{% if categetab %}
+<div class="alert alert-info">
+    {{ isoles|length }} établissement(s) isolé(s) détecté(s) pour la catégorie
+    <code>{{ categetab }}</code> au-delà de {{ rayon_km }} km.
+</div>
+
+<div id="map-zones" class="mb-3"></div>
+
+{% if isoles %}
+<div class="card">
+    <div class="card-header">Liste des ET isolés</div>
+    <div class="card-body p-0">
+        <table class="table table-sm table-hover mb-0">
+            <thead><tr><th>FINESS</th><th>Raison sociale</th><th>Commune</th><th>Dept</th><th></th></tr></thead>
+            <tbody>
+            {% for p in isoles %}
+            <tr>
+                <td><code>{{ p.nofinesset }}</code></td>
+                <td>{{ p.rs }}</td>
+                <td>{{ p.commune }}</td>
+                <td>{{ p.departement }}</td>
+                <td><a href="/etablissement/{{ p.nofinesset }}" class="btn btn-sm btn-outline-primary">Fiche</a></td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if categetab and isoles %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const map = L.map('map-zones').setView([46.8, 2.5], 6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+const points = [
+    {% for p in isoles %}
+    {lat: {{ p.lat }}, lon: {{ p.lon }}, id: "{{ p.nofinesset }}", rs: {{ p.rs|tojson }}, commune: {{ p.commune|tojson }}},
+    {% endfor %}
+];
+const layer = L.layerGroup().addTo(map);
+points.forEach(p => {
+    L.circleMarker([p.lat, p.lon], {radius: 6, color: '#dc3545', fillOpacity: 0.7})
+     .bindPopup('<strong>' + p.rs + '</strong><br><code>' + p.id + '</code><br>' + p.commune +
+                '<br><a href="/etablissement/' + p.id + '">Voir fiche</a>')
+     .addTo(layer);
+});
+if (points.length) {
+    const bounds = L.latLngBounds(points.map(p => [p.lat, p.lon]));
+    map.fitBounds(bounds, {padding: [30, 30]});
+}
+</script>
+{% endif %}
+{% endblock %}

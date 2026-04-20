@@ -1,0 +1,81 @@
+name: Release Windows
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows-build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Resolve version
+        id: ver
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF -match '^refs/tags/v(.+)$') {
+            $v = $Matches[1]
+          } else {
+            $v = "0.0.0-dev"
+          }
+          "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          echo "APP_VERSION=$v" >> $env:GITHUB_ENV
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-desktop.txt
+
+      - name: Build .exe with PyInstaller
+        run: pyinstaller --clean --noconfirm Finess-for-Laure.spec
+
+      - name: Install Inno Setup
+        run: choco install innosetup --yes --no-progress
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
+
+      - name: Zip raw bundle (fallback)
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "dist\Finess-for-Laure\*" `
+                           -DestinationPath "dist-installer\Finess-for-Laure-${{ steps.ver.outputs.version }}-portable.zip"
+
+      - name: Upload artifacts (for manual runs)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Finess-for-Laure-windows
+          path: dist-installer/*
+
+      - name: Publish to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Finess-for-Laure ${{ steps.ver.outputs.version }}
+          body: |
+            ## Installation
+
+            1. Téléchargez **Finess-for-Laure-Setup-${{ steps.ver.outputs.version }}.exe** ci-dessous.
+            2. Double-cliquez dessus. Si Windows affiche un avertissement, cliquez sur **Informations complémentaires** puis **Exécuter quand même**.
+            3. Suivez l'assistant (Suivant → Installer → Terminer).
+            4. Ouvrez **Finess-for-Laure** depuis le menu Démarrer.
+
+            La version *portable.zip* est une alternative sans installation : décompresser et double-cliquer sur `Finess-for-Laure.exe`.
+          files: |
+            dist-installer/*.exe
+            dist-installer/*.zip
+          draft: false
+          prerelease: false

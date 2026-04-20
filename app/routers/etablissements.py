@@ -1,18 +1,28 @@
+"""Routes pour la consultation et l'import des établissements FINESS."""
+
+from __future__ import annotations
+
 import io
+import logging
 from typing import Optional
 
 import pandas as pd
-from fastapi import APIRouter, Depends, Query, Request, UploadFile, File
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
-from sqlalchemy import or_, func
+from sqlalchemy import func, or_
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from app.database import get_db, init_db
-from app.models import Etablissement, EntiteJuridique
+from app.config import settings
+from app.database import get_db
+from app.models import EntiteJuridique, Etablissement
+
+logger = logging.getLogger(__name__)
+
+from app.paths import templates
+
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
 
 REGIONS = {
     "01": "Guadeloupe",
@@ -34,6 +44,9 @@ REGIONS = {
     "93": "Provence-Alpes-Côte d'Azur",
     "94": "Corse",
 }
+
+# Chunk size for bulk CSV imports. Keeps memory bounded on large files.
+_IMPORT_CHUNK = 1000
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -58,9 +71,9 @@ async def index(request: Request, db: Session = Depends(get_db)):
     )
 
     return templates.TemplateResponse(
+        request,
         "index.html",
         {
-            "request": request,
             "total_et": total_et,
             "total_ej": total_ej,
             "par_region": par_region,
@@ -114,9 +127,9 @@ async def recherche(
     )
 
     return templates.TemplateResponse(
+        request,
         "search.html",
         {
-            "request": request,
             "resultats": resultats,
             "q": q or "",
             "region": region or "",
@@ -154,9 +167,9 @@ async def detail_etablissement(
         )
 
     return templates.TemplateResponse(
+        request,
         "detail.html",
         {
-            "request": request,
             "etab": etab,
             "ej": ej,
             "autres_et": autres_et,
@@ -166,53 +179,126 @@ async def detail_etablissement(
 
 @router.get("/import", response_class=HTMLResponse)
 async def import_page(request: Request):
-    return templates.TemplateResponse("import.html", {"request": request})
+    return templates.TemplateResponse(
+        request,
+        "import.html",
+        {"max_upload_mb": settings.max_upload_mb},
+    )
+
+
+async def _spool_upload(upload: UploadFile, max_bytes: int) -> bytes:
+    """Lit le fichier en streaming et refuse tout ce qui dépasse la limite."""
+    buf = io.BytesIO()
+    total = 0
+    while True:
+        chunk = await upload.read(1024 * 1024)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > max_bytes:
+            raise HTTPException(
+                status_code=413,
+                detail=f"Fichier trop volumineux (> {max_bytes // (1024 * 1024)} Mo).",
+            )
+        buf.write(chunk)
+    return buf.getvalue()
+
+
+def _import_dataframe(df: pd.DataFrame, model, db: Session) -> int:
+    """Insère / met à jour un DataFrame dans la table `model`.
+
+    Utilise `bulk_*_mappings` par lot pour limiter la pression mémoire et
+    les aller-retours SQL.
+    """
+    cols = set(model.__table__.columns.keys())
+    pk = model.__table__.primary_key.columns.values()[0].name
+
+    df.columns = [c.strip().lower() for c in df.columns]
+    if pk not in df.columns:
+        raise ValueError(f"Colonne clé '{pk}' absente du fichier.")
+
+    keep = [c for c in df.columns if c in cols]
+    df = df[keep].copy()
+    df = df[df[pk].notna() & (df[pk].astype(str).str.strip() != "")]
+
+    # Qui existe déjà, pour dispatcher INSERT vs UPDATE sans ORM Objects.
+    existing_ids = {
+        row[0]
+        for row in db.query(getattr(model, pk)).filter(
+            getattr(model, pk).in_(df[pk].tolist())
+        )
+    }
+
+    inserts = []
+    updates = []
+    for record in df.to_dict(orient="records"):
+        if record[pk] in existing_ids:
+            updates.append(record)
+        else:
+            inserts.append(record)
+
+    for i in range(0, len(inserts), _IMPORT_CHUNK):
+        db.bulk_insert_mappings(model, inserts[i : i + _IMPORT_CHUNK])
+    for i in range(0, len(updates), _IMPORT_CHUNK):
+        db.bulk_update_mappings(model, updates[i : i + _IMPORT_CHUNK])
+
+    return len(inserts) + len(updates)
 
 
 @router.post("/import", response_class=HTMLResponse)
 async def import_data(
     request: Request,
     fichier_et: UploadFile = File(..., description="Fichier CSV des établissements"),
-    fichier_ej: Optional[UploadFile] = File(None, description="Fichier CSV des entités juridiques"),
+    fichier_ej: Optional[UploadFile] = File(
+        None, description="Fichier CSV des entités juridiques"
+    ),
     db: Session = Depends(get_db),
 ):
-    messages = []
+    messages: list[str] = []
+    errors: list[str] = []
+    max_bytes = settings.max_upload_bytes
 
     try:
-        # Import entités juridiques
         if fichier_ej and fichier_ej.filename:
-            content = await fichier_ej.read()
-            df_ej = pd.read_csv(
-                io.BytesIO(content), sep=";", dtype=str, encoding="utf-8"
-            )
-            df_ej.columns = [c.strip().lower() for c in df_ej.columns]
-            count = 0
-            for _, row in df_ej.iterrows():
-                data = {c: row.get(c) for c in EntiteJuridique.__table__.columns.keys() if c in row.index}
-                if "nofinesset" in data and data["nofinesset"]:
-                    db.merge(EntiteJuridique(**data))
-                    count += 1
+            payload = await _spool_upload(fichier_ej, max_bytes)
+            df_ej = pd.read_csv(io.BytesIO(payload), sep=";", dtype=str, encoding="utf-8")
+            count = _import_dataframe(df_ej, EntiteJuridique, db)
             db.commit()
-            messages.append(f"{count} entités juridiques importées.")
+            messages.append(f"{count} entité(s) juridique(s) importée(s).")
+            logger.info("Import EJ : %d rows", count)
 
-        # Import établissements
-        content = await fichier_et.read()
-        df_et = pd.read_csv(
-            io.BytesIO(content), sep=";", dtype=str, encoding="utf-8"
-        )
-        df_et.columns = [c.strip().lower() for c in df_et.columns]
-        count = 0
-        for _, row in df_et.iterrows():
-            data = {c: row.get(c) for c in Etablissement.__table__.columns.keys() if c in row.index}
-            if "nofinesset" in data and data["nofinesset"]:
-                db.merge(Etablissement(**data))
-                count += 1
+        payload = await _spool_upload(fichier_et, max_bytes)
+        df_et = pd.read_csv(io.BytesIO(payload), sep=";", dtype=str, encoding="utf-8")
+        count = _import_dataframe(df_et, Etablissement, db)
         db.commit()
-        messages.append(f"{count} établissements importés.")
+        messages.append(f"{count} établissement(s) importé(s).")
+        logger.info("Import ET : %d rows", count)
 
-    except Exception as e:
-        messages.append(f"Erreur lors de l'import : {e}")
+    except HTTPException:
+        raise
+    except UnicodeDecodeError as exc:
+        db.rollback()
+        errors.append(f"Encodage invalide (attendu UTF-8) : {exc}")
+        logger.warning("Import rejeté : encodage invalide")
+    except (pd.errors.ParserError, pd.errors.EmptyDataError) as exc:
+        db.rollback()
+        errors.append(f"Fichier CSV invalide : {exc}")
+        logger.warning("Import rejeté : parse error (%s)", exc)
+    except ValueError as exc:
+        db.rollback()
+        errors.append(str(exc))
+        logger.warning("Import rejeté : %s", exc)
+    except SQLAlchemyError as exc:
+        db.rollback()
+        errors.append("Erreur base de données pendant l'import.")
+        logger.exception("Import: erreur SQLAlchemy : %s", exc)
 
     return templates.TemplateResponse(
-        "import.html", {"request": request, "messages": messages}
+        request,
+        "import.html",
+        {
+            "messages": messages,
+            "errors": errors,
+            "max_upload_mb": settings.max_upload_mb,
+        },
     )

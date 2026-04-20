@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}FINESS ARS{% endblock %}</title>
+    <title>{% block title %}Finess-for-Laure{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="/static/css/style.css" rel="stylesheet">
@@ -13,7 +13,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container-fluid">
             <a class="navbar-brand fw-bold" href="/">
-                <i class="bi bi-hospital"></i> FINESS ARS
+                <i class="bi bi-hospital"></i> Finess-for-Laure
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -27,16 +27,29 @@
                         <a class="nav-link" href="/recherche"><i class="bi bi-search"></i> Recherche</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/qualite"><i class="bi bi-shield-check"></i> Qualite</a>
+                        <a class="nav-link" href="/qualite"><i class="bi bi-shield-check"></i> Qualité</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/workflow"><i class="bi bi-kanban"></i> Dossiers</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/reconciliation"><i class="bi bi-arrow-left-right"></i> Reconciliation</a>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-arrow-left-right"></i> Réconciliation
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/reconciliation">Diff &amp; SAE</a></li>
+                            <li><a class="dropdown-item" href="/reconciliation/sirene">Vérification SIRENE</a></li>
+                        </ul>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/cartographie"><i class="bi bi-geo-alt"></i> Carte</a>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-geo-alt"></i> Carte
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/cartographie">Carte interactive</a></li>
+                            <li><a class="dropdown-item" href="/cartographie/anomalies">Anomalies géographiques</a></li>
+                            <li><a class="dropdown-item" href="/cartographie/zones-blanches">Zones blanches</a></li>
+                        </ul>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/documents"><i class="bi bi-file-earmark-text"></i> Documents</a>
@@ -60,7 +73,7 @@
 
     <footer class="bg-light text-muted py-3 mt-5">
         <div class="container text-center">
-            <small>FINESS ARS - Outil d'assistance &mdash; Usage interne ARS</small>
+            <small>Finess-for-Laure &mdash; Outil d'assistance &mdash; Usage interne ARS</small>
         </div>
     </footer>
 

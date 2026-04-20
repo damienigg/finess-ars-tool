@@ -1,11 +1,12 @@
+import enum
+
 from sqlalchemy import (
-    Column, String, Integer, Float, Text, ForeignKey, DateTime, Enum, Boolean,
+    Boolean, Column, DateTime, ForeignKey, Integer, String, Text,
 )
 from sqlalchemy.orm import relationship
-import enum
-from datetime import datetime
 
 from app.database import Base
+from app.utils import utcnow
 
 
 # ---------------------------------------------------------------------------
@@ -132,11 +133,11 @@ class Dossier(Base):
     objet = Column(Text, comment="Description de la demande")
     demandeur = Column(String(255))
     agent_instructeur = Column(String(255))
-    date_reception = Column(DateTime, default=datetime.utcnow)
+    date_reception = Column(DateTime, default=utcnow)
     date_echeance = Column(DateTime, nullable=True)
     date_cloture = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
     etablissement = relationship("Etablissement", back_populates="dossiers")
     evenements = relationship(
@@ -151,7 +152,7 @@ class EvenementDossier(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     dossier_id = Column(Integer, ForeignKey("dossiers.id"), index=True)
-    date = Column(DateTime, default=datetime.utcnow)
+    date = Column(DateTime, default=utcnow)
     auteur = Column(String(255))
     type_evenement = Column(String(50), comment="changement_statut, commentaire, piece_jointe")
     ancien_statut = Column(String(20), nullable=True)
@@ -178,7 +179,7 @@ class Anomalie(Base):
     niveau = Column(String(20), nullable=False, default=NiveauAnomalie.ERREUR.value)
     message = Column(Text, nullable=False)
     detail = Column(Text, nullable=True)
-    date_detection = Column(DateTime, default=datetime.utcnow)
+    date_detection = Column(DateTime, default=utcnow)
     resolved = Column(Boolean, default=False)
 
     etablissement = relationship("Etablissement", back_populates="anomalies")
@@ -199,5 +200,5 @@ class HistoriqueModification(Base):
     champ = Column(String(50))
     ancienne_valeur = Column(Text, nullable=True)
     nouvelle_valeur = Column(Text, nullable=True)
-    date_modification = Column(DateTime, default=datetime.utcnow)
+    date_modification = Column(DateTime, default=utcnow)
     source = Column(String(50), comment="import, manuel, reconciliation")

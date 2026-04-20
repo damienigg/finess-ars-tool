@@ -4,6 +4,7 @@ import pytest
 from datetime import datetime, timedelta
 
 from app.models import Dossier, EvenementDossier, StatutDemande, TypeDemande
+from app.utils import utcnow
 
 
 class TestCreerDossier:
@@ -23,7 +24,7 @@ class TestCreerDossier:
         assert dossier.type_demande == "creation"
 
     def test_creer_dossier_avec_echeance(self, db, sample_et):
-        echeance = datetime.utcnow() + timedelta(days=30)
+        echeance = utcnow() + timedelta(days=30)
         dossier = Dossier(
             nofinesset=sample_et.nofinesset,
             type_demande=TypeDemande.MODIFICATION.value,
@@ -72,7 +73,7 @@ class TestChangerStatut:
         db.commit()
 
         dossier.statut = StatutDemande.VALIDE.value
-        dossier.date_cloture = datetime.utcnow()
+        dossier.date_cloture = utcnow()
         db.commit()
 
         assert dossier.date_cloture is not None
@@ -137,7 +138,7 @@ class TestEvenementDossier:
                 auteur="Agent",
                 type_evenement="changement_statut",
                 nouveau_statut=statut,
-                date=datetime.utcnow() + timedelta(seconds=i),
+                date=utcnow() + timedelta(seconds=i),
             )
             db.add(evt)
 

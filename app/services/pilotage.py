@@ -12,6 +12,7 @@ from app.models import (
     Etablissement, EntiteJuridique, Dossier, Anomalie,
     StatutDemande,
 )
+from app.utils import utcnow
 
 
 @dataclass
@@ -114,8 +115,6 @@ def dossiers_par_statut(db: Session) -> List[Dict]:
 
 def dossiers_en_retard(db: Session) -> List[Dossier]:
     """Dossiers ouverts dont la date d'échéance est dépassée."""
-    from datetime import datetime
-
     statuts_ouverts = [
         StatutDemande.RECU.value,
         StatutDemande.EN_INSTRUCTION.value,
@@ -126,7 +125,7 @@ def dossiers_en_retard(db: Session) -> List[Dossier]:
         .filter(
             Dossier.statut.in_(statuts_ouverts),
             Dossier.date_echeance.isnot(None),
-            Dossier.date_echeance < datetime.utcnow(),
+            Dossier.date_echeance < utcnow(),
         )
         .order_by(Dossier.date_echeance)
         .all()

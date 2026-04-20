@@ -1,25 +1,30 @@
 """Routes pour la génération de documents."""
 
-from typing import Optional
+from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Request, Form, Query
+import logging
+
+from fastapi import APIRouter, Depends, Form, Query, Request
 from fastapi.responses import HTMLResponse, PlainTextResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.services.documents import lister_modeles, generer_document
+from app.services.documents import generer_document, get_modele, lister_modeles
+
+logger = logging.getLogger(__name__)
+
+from app.paths import templates
+
 
 router = APIRouter(prefix="/documents", tags=["documents"])
-templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("", response_class=HTMLResponse)
 async def page_documents(request: Request):
-    modeles = lister_modeles()
     return templates.TemplateResponse(
+        request,
         "documents/liste.html",
-        {"request": request, "modeles": modeles},
+        {"modeles": lister_modeles()},
     )
 
 
@@ -27,12 +32,13 @@ async def page_documents(request: Request):
 async def formulaire_generer(
     request: Request,
     modele_id: str = Query(...),
+    nofinesset: str = Query(""),
 ):
-    from app.services.documents import get_modele
     modele = get_modele(modele_id)
     return templates.TemplateResponse(
+        request,
         "documents/generer.html",
-        {"request": request, "modele": modele},
+        {"modele": modele, "nofinesset": nofinesset},
     )
 
 
@@ -58,13 +64,13 @@ async def generer(
         "delai_jours": delai_jours,
     }
     texte = generer_document(db, modele_id, nofinesset, variables_extra)
-
-    from app.services.documents import get_modele
     modele = get_modele(modele_id)
+    logger.info("Document %s généré pour %s", modele_id, nofinesset)
 
     return templates.TemplateResponse(
+        request,
         "documents/resultat.html",
-        {"request": request, "texte": texte, "modele": modele, "nofinesset": nofinesset},
+        {"texte": texte, "modele": modele, "nofinesset": nofinesset},
     )
 
 

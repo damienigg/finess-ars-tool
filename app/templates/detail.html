@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ etab.rs if etab else "Introuvable" }} - FINESS ARS{% endblock %}
+{% block title %}{{ etab.rs if etab else "Introuvable" }} - Finess-for-Laure{% endblock %}
 
 {% block content %}
 {% if not etab %}
@@ -14,13 +14,25 @@
     </ol>
 </nav>
 
-<h1 class="mb-1">{{ etab.rs }}</h1>
-<p class="text-muted mb-4">
-    <code>FINESS ET {{ etab.nofinesset }}</code>
-    {% if etab.nofinessej %}
-     &mdash; <code>EJ {{ etab.nofinessej }}</code>
-    {% endif %}
-</p>
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h1 class="mb-1">{{ etab.rs }}</h1>
+        <p class="text-muted mb-0">
+            <code>FINESS ET {{ etab.nofinesset }}</code>
+            {% if etab.nofinessej %}
+             &mdash; <code>EJ {{ etab.nofinessej }}</code>
+            {% endif %}
+        </p>
+    </div>
+    <div class="btn-group">
+        <a href="/workflow/nouveau?nofinesset={{ etab.nofinesset }}" class="btn btn-outline-primary">
+            <i class="bi bi-folder-plus"></i> Nouveau dossier
+        </a>
+        <a href="/documents" class="btn btn-outline-secondary">
+            <i class="bi bi-file-earmark-text"></i> Générer un courrier
+        </a>
+    </div>
+</div>
 
 <div class="row">
     <div class="col-md-6">

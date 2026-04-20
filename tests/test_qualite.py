@@ -189,8 +189,9 @@ class TestRegleOuvertSansAutorisation:
 
     def test_sans_autorisation_recent(self, db):
         """Un ET ouvert récemment sans autorisation ne devrait pas être flaggé."""
-        from datetime import datetime, timedelta
-        recent = (datetime.utcnow() - timedelta(days=30)).strftime("%Y-%m-%d")
+        from datetime import timedelta
+        from app.utils import utcnow
+        recent = (utcnow() - timedelta(days=30)).strftime("%Y-%m-%d")
         et = Etablissement(
             nofinesset="777000002",
             rs="RECENT SANS AUTOR",

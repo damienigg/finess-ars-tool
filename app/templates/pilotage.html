@@ -1,8 +1,24 @@
 {% extends "base.html" %}
-{% block title %}Pilotage - FINESS ARS{% endblock %}
+{% block title %}Pilotage - Finess-for-Laure{% endblock %}
 
 {% block content %}
-<h1 class="mb-4"><i class="bi bi-bar-chart-line"></i> Pilotage</h1>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0"><i class="bi bi-bar-chart-line"></i> Pilotage</h1>
+    <div class="btn-group">
+        <a href="/pilotage/export?quoi=categories" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-download"></i> Catégories
+        </a>
+        <a href="/pilotage/export?quoi=departements" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-download"></i> Départements
+        </a>
+        <a href="/pilotage/export?quoi=inter_dept" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-download"></i> Inter-dept
+        </a>
+        <a href="/pilotage/export?quoi=retards" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-download"></i> Retards
+        </a>
+    </div>
+</div>
 
 <!-- Indicateurs globaux -->
 <div class="row mb-4">

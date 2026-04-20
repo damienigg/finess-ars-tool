@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Anomalies géographiques - Finess-for-Laure{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/cartographie">Cartographie</a></li>
+        <li class="breadcrumb-item active">Anomalies géographiques</li>
+    </ol>
+</nav>
+
+<h1 class="mb-4"><i class="bi bi-exclamation-triangle"></i> Anomalies géographiques</h1>
+<p class="text-muted">
+    Coordonnées Lambert 93 absentes, à (0,0), hors France métropolitaine ou hors du
+    département déclaré.
+</p>
+
+{% if anomalies %}
+<div class="alert alert-warning">{{ anomalies|length }} anomalie(s) détectée(s).</div>
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-sm table-hover mb-0">
+            <thead class="table-dark">
+                <tr><th>FINESS</th><th>Type</th><th>Message</th><th></th></tr>
+            </thead>
+            <tbody>
+            {% for a in anomalies %}
+            <tr>
+                <td><code>{{ a.nofinesset }}</code></td>
+                <td>
+                    <span class="badge text-bg-{{ 'danger' if a.type in ('COORD_ZERO','COORD_NON_NUMERIQUE') else 'warning' }}">
+                        {{ a.type }}
+                    </span>
+                </td>
+                <td><small>{{ a.message }}</small></td>
+                <td><a href="/etablissement/{{ a.nofinesset }}" class="btn btn-sm btn-outline-primary">Fiche</a></td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-success">Aucune anomalie géographique détectée.</div>
+{% endif %}
+{% endblock %}
