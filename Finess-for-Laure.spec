@@ -4,7 +4,11 @@
 Build :
     pyinstaller --clean --noconfirm Finess-for-Laure.spec
 """
-from PyInstaller.utils.hooks import collect_data_files, collect_submodules
+from PyInstaller.utils.hooks import (
+    collect_all,
+    collect_data_files,
+    collect_submodules,
+)
 
 app_name = "Finess-for-Laure"
 
@@ -17,10 +21,18 @@ datas = [
 ]
 datas += collect_data_files("pyproj")
 
-# Uvicorn et SQLAlchemy ont des imports dynamiques invisibles pour PyInstaller.
+binaries = []
 hiddenimports = []
+
+# Paquets avec beaucoup d'imports dynamiques et de binaires natifs :
+# on embarque TOUT (datas, binaires, sous-modules).
+for pkg in ("numpy", "pandas", "sqlalchemy"):
+    d, b, h = collect_all(pkg)
+    datas += d
+    binaries += b
+    hiddenimports += h
+
 hiddenimports += collect_submodules("uvicorn")
-hiddenimports += collect_submodules("sqlalchemy.dialects.sqlite")
 hiddenimports += collect_submodules("app.routers")
 hiddenimports += collect_submodules("app.services")
 hiddenimports += [
@@ -36,7 +48,7 @@ block_cipher = None
 a = Analysis(
     ["app/desktop.py"],
     pathex=["."],
-    binaries=[],
+    binaries=binaries,
     datas=datas,
     hiddenimports=hiddenimports,
     hookspath=[],

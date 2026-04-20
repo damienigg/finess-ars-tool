@@ -1,16 +1,19 @@
 """Lanceur desktop pour Finess-for-Laure (Windows / macOS / Linux).
 
 Lance uvicorn dans un thread en fond et affiche l'interface dans une
-fenêtre WebView. Aucun terminal ne s'affiche pour l'utilisateur final.
+fenêtre WebView. Si pywebview n'est pas disponible (ex. Linux sans
+WebKit2), ouvre l'URL dans le navigateur par défaut.
 """
 
 from __future__ import annotations
 
 import logging
+import os
 import socket
 import sys
 import threading
 import time
+import webbrowser
 from contextlib import closing
 from urllib.request import urlopen
 
@@ -55,7 +58,6 @@ class _ServerThread(threading.Thread):
             port=port,
             log_level="warning",
             access_log=False,
-            # Important en mode gelé : pas de reload, pas de workers.
             reload=False,
             workers=1,
             lifespan="on",
@@ -67,6 +69,47 @@ class _ServerThread(threading.Thread):
 
     def shutdown(self) -> None:
         self.server.should_exit = True
+
+
+def _open_webview(url: str, logger: logging.Logger) -> bool:
+    """Essaye d'ouvrir la fenêtre pywebview. Retourne True si OK."""
+    try:
+        import webview
+    except ImportError:
+        logger.info("pywebview indisponible, fallback navigateur.")
+        return False
+
+    try:
+        webview.create_window(
+            APP_TITLE,
+            url=url,
+            width=WINDOW_SIZE[0],
+            height=WINDOW_SIZE[1],
+            resizable=True,
+            min_size=(960, 640),
+        )
+        webview.start()
+        return True
+    except Exception as exc:  # noqa: BLE001
+        # Linux sans WebKit2 lève ValueError au démarrage.
+        logger.warning("pywebview a échoué (%s), fallback navigateur.", exc)
+        return False
+
+
+def _open_browser_and_wait(url: str, logger: logging.Logger) -> None:
+    """Fallback : ouvre le navigateur par défaut et laisse le serveur tourner."""
+    webbrowser.open(url)
+    logger.info("Application disponible sur %s", url)
+    print(
+        f"\n  Finess-for-Laure est ouvert dans votre navigateur : {url}\n"
+        "  Fermez cette fenêtre (Ctrl+C) pour arrêter l'application.\n",
+        flush=True,
+    )
+    try:
+        while True:
+            time.sleep(3600)
+    except KeyboardInterrupt:
+        logger.info("Arrêt demandé (Ctrl+C)")
 
 
 def main() -> int:
@@ -83,25 +126,14 @@ def main() -> int:
         server.shutdown()
         return 2
 
-    try:
-        import webview
-    except ImportError:
-        logger.error("pywebview n'est pas installé. `pip install pywebview`")
-        server.shutdown()
-        return 3
-
     url = f"http://127.0.0.1:{port}/"
-    logger.info("Ouverture de la fenêtre sur %s", url)
-    webview.create_window(
-        APP_TITLE,
-        url=url,
-        width=WINDOW_SIZE[0],
-        height=WINDOW_SIZE[1],
-        resizable=True,
-        min_size=(960, 640),
-    )
+
+    # FINESS_NO_WEBVIEW=1 force le fallback navigateur (utile pour tests CI / headless).
+    force_browser = os.getenv("FINESS_NO_WEBVIEW") == "1"
+
     try:
-        webview.start()
+        if force_browser or not _open_webview(url, logger):
+            _open_browser_and_wait(url, logger)
     finally:
         logger.info("Fermeture — arrêt du serveur")
         server.shutdown()

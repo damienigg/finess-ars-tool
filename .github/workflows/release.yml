@@ -1,4 +1,4 @@
-name: Release Windows
+name: Release (Windows + Linux)
 
 on:
   push:
@@ -10,6 +10,61 @@ permissions:
   contents: write
 
 jobs:
+  linux-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Resolve version
+        id: ver
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            V="${GITHUB_REF#refs/tags/v}"
+          else
+            V="0.0.0-dev"
+          fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+
+      - name: Install system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libproj-dev proj-data proj-bin \
+            libgirepository1.0-dev gir1.2-webkit2-4.1 libcairo2
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-desktop.txt
+
+      - name: Build Linux binary
+        run: pyinstaller --clean --noconfirm Finess-for-Laure.spec
+
+      - name: Package tar.gz
+        run: |
+          mkdir -p dist-installer
+          tar -C dist -czf \
+            dist-installer/Finess-for-Laure-${{ steps.ver.outputs.version }}-linux-x64.tar.gz \
+            Finess-for-Laure
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Finess-for-Laure-linux
+          path: dist-installer/*.tar.gz
+
+      - name: Publish to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist-installer/*.tar.gz
+          draft: false
+          prerelease: false
+
   windows-build:
     runs-on: windows-latest
     steps:

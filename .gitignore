@@ -8,3 +8,9 @@ venv/
 data/*.csv
 data/*.xlsx
 .DS_Store
+
+# PyInstaller build artifacts
+build/
+dist/
+dist-installer/
+*.spec.bak
